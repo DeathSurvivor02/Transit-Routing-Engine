@@ -1,23 +1,6 @@
 /***
- *  Date: July 27th, 2026
- * 	Author: Ean Bynoe
- * 	
- * Description:
- * This is the core execution file for the A* transit routing engine.
- * It initialises the the foundational data structures for the graph network,
- * including the node list (bus stops), the adjacency list (connecting roads),
- * and the dynamic hash map for live traffic multipliers. It acts as the entry 
- * point for building the map and triggering the pathfinding algorithm
- * 
+ * Transit Routing Engine Entry
  */
-
-/***
- * Date: Aug 1st, 2026
- * Description: Broken down the different pieces of data data into their own files. "NodeData.h", "EdgeData.h", "TheEngine.h"
- * 
- * 
- *  */  
-
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -25,36 +8,49 @@
 #include "NodeData.h"
 #include "EdgeData.h"
 #include "TheEngine.h"
+#include "BuildMapp.h"
+#include "GTFSParser.h"
 
+int main()
+{
+    std::vector<NodeData> nodes;
+    std::vector<std::vector<EdgeData>> adj_list;
+    std::unordered_map<int, double> traffic_multiplier;
+    std::unordered_map<std::string, int> stop_id_map;
 
+    std::cout << "=========================================\n";
+    std::cout << "   Transit Routing Engine Initialized    \n";
+    std::cout << "=========================================\n\n";
 
-//Variables
+    // Phase 1: Attempt to Load GTFS Data
+    LoadGTFSStops("stops.txt", nodes, stop_id_map, adj_list);
 
+    // Fallback logic: If no GTFS stops are found, build the hardcoded mock map
+    if (nodes.empty()) {
+        std::cout << "[Info] Building map using hardcoded fallback routing points...\n";
+        BuildMap(nodes, adj_list);
+    }
 
+    std::cout << "[Info] Engine compiled and map structures populated. Total Nodes: " << nodes.size() << "\n\n";
 
+    // Phase 2: Run the A* Routing Engine
+    if (nodes.size() >= 3) {
+        int start_node = 0;
+        int end_node = 2; // Targeting Home_132 to School_132
+        
+        std::cout << "Calculating optimal route from '" << nodes[start_node].name << "' to '" << nodes[end_node].name << "'...\n";
+        
+        std::vector<int> path = RunAStar(start_node, end_node, nodes, adj_list);
 
+        if (path.empty()) {
+            std::cout << "-> No route found!\n";
+        } else {
+            std::cout << "-> Route successfully found! Path sequence:\n";
+            for (size_t i = 0; i < path.size(); ++i) {
+                std::cout << "   " << (i + 1) << ". " << nodes[path[i]].name << "\n";
+            }
+        }
+    }
 
-
-
-// EdgeData must be defined before adj_list can use it
-
-
-//2. Global Variables 
-//Function
-
-std::vector<NodeData> Nodes; // Vector to store node data
-std::vector<std::vector<EdgeData>> adj_list; 	
-std::unordered_map<int, double> traffic_multiplier; 
-int TheEngine();
-
-
-
-int BaseCost[]; //Description: this array will store the base cost for the edges between nodes
-
-
-std::unordered_map<int, double> traffic_multiplier; //Description: this unordered map will store the traffic multiplier for each edge between nodes
-
-
-
-
-
+    return 0;
+}
