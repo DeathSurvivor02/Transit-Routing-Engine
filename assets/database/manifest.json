@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-10-14T22:30:00Z",
+  "dbFileName": "transit_offline.db",
+  "cipherAlgorithm": "AES-256-CBC",
+  "kdfAlgorithm": "PBKDF2_HMAC_SHA512",
+  "kdfIterations": 256000,
+  "pageSize": 4096,
+  "hmacSha256": "placeholder_hmac_hex_for_build_verification",
+  "expectedStopsCount": 1500,
+  "expectedSignalsCount": 350
+}
