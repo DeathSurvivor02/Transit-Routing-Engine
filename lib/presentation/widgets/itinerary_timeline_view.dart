@@ -5,7 +5,7 @@ import '../../isolate_bridge/itinerary_dto.dart';
 class ItineraryTimelineView extends StatelessWidget {
   final ItineraryDto itinerary;
 
-  const ItineraryTimelineView({Key? key, required this.itinerary}) : super(key: key);
+  const ItineraryTimelineView({super.key, required this.itinerary});
 
   String _formatTime(int epochSeconds) {
     final dt = DateTime.fromMillisecondsSinceEpoch(epochSeconds * 1000);
@@ -35,54 +35,62 @@ class ItineraryTimelineView extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           padding: const EdgeInsets.all(12.0),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primaryContainer.withOpacity(0.4),
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '${(itinerary.totalDurationSeconds / 60).round()} min',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimaryContainer,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     '${_formatTime(itinerary.departureEpochSeconds)} - ${_formatTime(itinerary.arrivalEpochSeconds)}',
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (itinerary.totalSignalDelaySeconds > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade700,
+                        color: Colors.amber.shade800,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.traffic, size: 14, color: Colors.white),
                           const SizedBox(width: 4),
                           Text(
                             '+${itinerary.totalSignalDelaySeconds.round()}s signal',
-                            style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
                     ),
                   Chip(
                     label: Text('${itinerary.transferCount} transfers'),
-                    labelStyle: const TextStyle(fontSize: 11),
+                    labelStyle: const TextStyle(fontSize: 12),
                     backgroundColor: theme.colorScheme.surface,
                   ),
                 ],
@@ -133,7 +141,7 @@ class ItineraryTimelineView extends StatelessWidget {
                         Container(
                           width: 3,
                           height: 50,
-                          color: legColor.withOpacity(0.6),
+                          color: legColor.withValues(alpha: 0.6),
                         ),
                     ],
                   ),

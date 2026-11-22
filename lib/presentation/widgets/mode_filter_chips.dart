@@ -8,10 +8,10 @@ class ModeFilterChips extends StatelessWidget {
   final ValueChanged<TransitModeFilter> onFilterSelected;
 
   const ModeFilterChips({
-    Key? key,
+    super.key,
     required this.selectedFilter,
     required this.onFilterSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +68,8 @@ class ModeFilterChips extends StatelessWidget {
         color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
       ),
       selectedColor: theme.colorScheme.primary,
-      backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+      backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
       onSelected: (_) => onFilterSelected(filter),
     );
   }

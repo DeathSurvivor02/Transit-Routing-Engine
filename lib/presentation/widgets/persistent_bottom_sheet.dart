@@ -8,11 +8,11 @@ class TransitPersistentBottomSheet extends StatelessWidget {
   final Widget itineraryList;
 
   const TransitPersistentBottomSheet({
-    Key? key,
+    super.key,
     required this.sheetController,
     required this.searchHeader,
     required this.itineraryList,
-  }) : super(key: key);
+  });
 
   static Widget sheetDragHandle() {
     return Center(
@@ -32,11 +32,11 @@ class TransitPersistentBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
       controller: sheetController,
-      initialChildSize: 0.18,
-      minChildSize: 0.14,
+      initialChildSize: 0.22,
+      minChildSize: 0.16,
       maxChildSize: 0.95,
       snap: true,
-      snapSizes: const [0.18, 0.50, 0.95],
+      snapSizes: const [0.22, 0.50, 0.95],
       builder: (context, scrollController) {
         return Material(
           elevation: 16.0,
@@ -48,7 +48,7 @@ class TransitPersistentBottomSheet extends StatelessWidget {
               SliverToBoxAdapter(child: sheetDragHandle()),
               SliverPersistentHeader(
                 pinned: true,
-                delegate: SearchHeaderDelegate(child: searchHeader, height: 110.0),
+                delegate: SearchHeaderDelegate(child: searchHeader, height: 120.0),
               ),
               itineraryList,
             ],
