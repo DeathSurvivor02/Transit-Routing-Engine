@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transit Routing Engine — Live Route Preview</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0b0f17; color: #e2e8f0; display: flex; height: 100vh; overflow: hidden; }
+    #sidebar { width: 340px; background: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+    h1 { font-size: 1.1rem; font-weight: 700; color: #f8fafc; }
+    .sub { font-size: 0.8rem; color: #94a3b8; }
+    label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    select, button { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #f8fafc; font-size: 0.875rem; }
+    button { background: #2563eb; border-color: #2563eb; font-weight: 600; cursor: pointer; margin-top: 4px; }
+    button:hover { background: #1d4ed8; }
+    #itinerary { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .step { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; }
+    .step strong { color: #60a5fa; display: block; margin-bottom: 2px; }
+    .meta { font-size: 0.75rem; color: #94a3b8; }
+    #map { flex: 1; height: 100%; }
+    @media (max-width: 768px) {
+      body { flex-direction: column; }
+      #sidebar { width: 100%; height: 45vh; border-right: none; border-bottom: 1px solid #1f2937; }
+      #map { height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div>
+      <h1>Transit Routing Engine</h1>
+      <p class="sub">A* Multi-Modal Pathfinding Preview (Toronto)</p>
+    </div>
+    <div>
+      <label for="origin">Origin Station</label>
+      <select id="origin"></select>
+    </div>
+    <div>
+      <label for="dest">Destination Station</label>
+      <select id="dest"></select>
+    </div>
+    <button id="routeBtn">Find Optimal Route (A*)</button>
+    <div id="summary" class="meta"></div>
+    <div id="itinerary"></div>
+  </aside>
+  <main id="map"></main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const stations = {
+      union: { name: "Union Station", lat: 43.6453, lng: -79.3806, line: "Line 1 / GO" },
+      bloor: { name: "Bloor-Yonge", lat: 43.6709, lng: -79.3857, line: "Line 1 / Line 2" },
+      stgeorge: { name: "St. George", lat: 43.6682, lng: -79.3997, line: "Line 1 / Line 2" },
+      spadina: { name: "Spadina", lat: 43.6672, lng: -79.4038, line: "Line 1 / Line 2 / 510" },
+      kennedy: { name: "Kennedy", lat: 43.7325, lng: -79.2636, line: "Line 2 / GO" },
+      finch: { name: "Finch", lat: 43.7805, lng: -79.4148, line: "Line 1" },
+      kipling: { name: "Kipling", lat: 43.6375, lng: -79.5356, line: "Line 2" },
+      eglinton: { name: "Eglinton", lat: 43.7056, lng: -79.3983, line: "Line 1" }
+    };
+
+    const edges = [
+      ["union", "bloor", 6, "Line 1 Yonge-University"],
+      ["bloor", "eglinton", 8, "Line 1 Yonge-University"],
+      ["eglinton", "finch", 11, "Line 1 Yonge-University"],
+      ["union", "stgeorge", 7, "Line 1 University"],
+      ["stgeorge", "spadina", 2, "Line 2 Bloor-Danforth"],
+      ["stgeorge", "bloor", 3, "Line 2 Bloor-Danforth"],
+      ["bloor", "kennedy", 18, "Line 2 Bloor-Danforth"],
+      ["spadina", "kipling", 19, "Line 2 Bloor-Danforth"],
+      ["union", "kennedy", 16, "GO Stouffville Express"]
+    ];
+
+    const adj = {};
+    Object.keys(stations).forEach(k => adj[k] = []);
+    edges.forEach(([a, b, w, mode]) => {
+      adj[a].push({ to: b, w, mode });
+      adj[b].push({ to: a, w, mode });
+    });
+
+    function heuristic(a, b) {
+      const dx = stations[a].lat - stations[b].lat;
+      const dy = stations[a].lng - stations[b].lng;
+      return Math.sqrt(dx * dx + dy * dy) * 60;
+    }
+
+    function aStar(start, goal) {
+      const open = new Set([start]);
+      const cameFrom = {};
+      const gScore = {};
+      const fScore = {};
+      Object.keys(stations).forEach(k => { gScore[k] = Infinity; fScore[k] = Infinity; });
+      gScore[start] = 0;
+      fScore[start] = heuristic(start, goal);
+
+      while (open.size > 0) {
+        let current = null;
+        for (const n of open) {
+          if (current === null || fScore[n] < fScore[current]) current = n;
+        }
+        if (current === goal) {
+          const path = [];
+          while (cameFrom[current]) {
+            path.unshift(cameFrom[current]);
+            current = cameFrom[current].from;
+          }
+          return { path, totalMin: gScore[goal] };
+        }
+        open.delete(current);
+        for (const edge of adj[current]) {
+          const prevMode = cameFrom[current]?.mode;
+          const transferPenalty = prevMode && prevMode !== edge.mode ? 3 : 0;
+          const tentative = gScore[current] + edge.w + transferPenalty;
+          if (tentative < gScore[edge.to]) {
+            cameFrom[edge.to] = { from: current, to: edge.to, w: edge.w, mode: edge.mode, transfer: transferPenalty > 0 };
+            gScore[edge.to] = tentative;
+            fScore[edge.to] = tentative + heuristic(edge.to, goal);
+            open.add(edge.to);
+          }
+        }
+      }
+      return null;
+    }
+
+    const map = L.map("map").setView([43.67, -79.39], 12);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: "&copy; OpenStreetMap &copy; CARTO"
+    }).addTo(map);
+
+    Object.entries(stations).forEach(([id, s]) => {
+      L.circleMarker([s.lat, s.lng], { radius: 6, color: "#60a5fa", fillColor: "#2563eb", fillOpacity: 0.9 })
+        .bindPopup(`<strong>${s.name}</strong><br/>${s.line}`)
+        .addTo(map);
+    });
+
+    let routeLayer = null;
+    const originSel = document.getElementById("origin");
+    const destSel = document.getElementById("dest");
+    Object.entries(stations).forEach(([id, s]) => {
+      originSel.add(new Option(s.name, id));
+      destSel.add(new Option(s.name, id));
+    });
+    originSel.value = "union";
+    destSel.value = "kennedy";
+
+    function renderRoute() {
+      const res = aStar(originSel.value, destSel.value);
+      const itin = document.getElementById("itinerary");
+      const summary = document.getElementById("summary");
+      itin.innerHTML = "";
+      if (routeLayer) map.removeLayer(routeLayer);
+      if (!res || res.path.length === 0) {
+        summary.textContent = "Select two different stations.";
+        return;
+      }
+      summary.textContent = `Estimated travel time: ${res.totalMin} min (${res.path.length} leg${res.path.length > 1 ? "s" : ""})`;
+      const coords = [[stations[originSel.value].lat, stations[originSel.value].lng]];
+      res.path.forEach((leg, i) => {
+        coords.push([stations[leg.to].lat, stations[leg.to].lng]);
+        const div = document.createElement("div");
+        div.className = "step";
+        div.innerHTML = `<strong>Leg ${i + 1}: ${leg.mode}</strong>${stations[leg.from].name} &rarr; ${stations[leg.to].name}<div class="meta">${leg.w} min${leg.transfer ? " (+3 min transfer)" : ""}</div>`;
+        itin.appendChild(div);
+      });
+      routeLayer = L.polyline(coords, { color: "#3b82f6", weight: 5, opacity: 0.9 }).addTo(map);
+      map.fitBounds(routeLayer.getBounds(), { padding: [40, 40] });
+    }
+
+    document.getElementById("routeBtn").addEventListener("click", renderRoute);
+    renderRoute();
+  </script>
+</body>
+</html>

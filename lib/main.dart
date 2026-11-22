@@ -47,16 +47,22 @@ class TransitRoutingApp extends StatelessWidget {
         theme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF007AFF),
+            seedColor: const Color(0xFF0062CC),
             brightness: Brightness.light,
+          ).copyWith(
+            primary: const Color(0xFF0062CC),
+            onPrimary: Colors.white,
           ),
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         darkTheme: ThemeData(
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF007AFF),
+            seedColor: const Color(0xFF0062CC),
             brightness: Brightness.dark,
+          ).copyWith(
+            primary: const Color(0xFF0062CC),
+            onPrimary: Colors.white,
           ),
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
